@@ -31,4 +31,4 @@ def multplicacao(a: int, b: int):
 
 @app.get('/raiz')
 def raiz(a: int):
-    return {'resultado': (a**2)}
+    return {'resultado': (a**(1/2))}
