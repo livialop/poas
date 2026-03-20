@@ -17,6 +17,10 @@ app = FastAPI()
 def soma(a: int, b: int):
     return {'resultado': (a+b)}
 
+@app.get('/subtracao')
+def subtracao(a: int, b:int):
+    return {'resultado': (a-b)}
+
 @app.get('/divisao')
 def divisao(a: int, b: int):
     return {'resultado': (a/b)}
