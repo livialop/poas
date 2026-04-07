@@ -93,7 +93,7 @@ def editar_livro(isbn: str, titulo: str = Body(...), preco: float = Body(...), a
             livro.editora = editora
             return livro
 
-    {'msg': 'não existe livro com esse isbn'}
+    return {'msg': 'não existe livro com esse isbn'}
 
 
 '''Empréstimo'''
