@@ -33,6 +33,7 @@ class Livro(BaseModel):
         return value
     
     @field_validator('preco')
+    @classmethod
     def validate_preco(cls, value):
         if value <= 0:
             raise ValueError("O preço deve ser maior que zero.")
