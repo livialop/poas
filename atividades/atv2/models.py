@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator
+from datetime import date
 
 class Usuario(BaseModel):
     nome: str
@@ -21,7 +22,7 @@ class Livro(BaseModel):
     preco: float
     autor: str
     editora: str
-    emprestado: bool = Field(default=False)  # Se estiver emprestado, validar com True
+    emprestado: bool = Field(default=False)  # se estiver emprestado, validar com True
     __values__: set = set()
 
     @field_validator('isbn')
@@ -42,3 +43,4 @@ class Livro(BaseModel):
 class Emprestimo(BaseModel):
     isbn: str
     usuario: EmailStr
+    prazo: date  # data limite para devolução
