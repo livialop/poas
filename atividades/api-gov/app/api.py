@@ -4,7 +4,8 @@ import requests
 import dotenv
 import os
 
-env_path = Path(__file__).resolve().parents[1]/".env"
+# Tinha criado o .env em um repositório pai, por isso o parents. mas deixei na mesma hierarquia ai botei o parents[0]
+env_path = Path(__file__).resolve().parents[0]/".env"
 
 dotenv.load_dotenv(env_path)
 
@@ -40,8 +41,6 @@ def consulta_por_cpf(cpf: str):
     viagensPorCpf = requests.get(endpoints["viagens"], headers=HEADERS)
     petiPorCpfNis = requests.get(endpoints["peti"], headers=HEADERS)
     bpcPorCpf = requests.get(endpoints["bpc"], headers=HEADERS)
-
-    print(endpoints)
 
     return {
         "pessoa-fisica": pessoaFisica.json() if len(pessoaFisica.text) > 0 else [], #Não sei o porquê mas isso dava erro quando retornava vazio, embora os outros não dê erro
