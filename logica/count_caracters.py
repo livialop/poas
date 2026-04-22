@@ -44,4 +44,43 @@ def count_caract(text: str) -> dict:
 
     return char_count
 
-print(count_caract("Banana"))
+
+banana = count_caract("Banana")
+
+hello_world = count_caract("Hello World!")
+
+numeros = count_caract("122 333")
+
+espaco_branco = count_caract("   ")
+
+python = count_caract("Python 3.10!")
+
+if banana != {'b': 1, 'a': 3, 'n': 2}:
+    raise ValueError("errooo")
+
+if banana == {'b': 1, 'a': 3, 'n': 2}:
+    pass
+
+if hello_world != {'h': 1, 'e': 1, 'l': 3, 'o': 2, 'w': 1, 'r': 1, 'd': 1, '!': 1}:
+    raise ValueError("errooo")
+
+if hello_world == {'h': 1, 'e': 1, 'l': 3, 'o': 2, 'w': 1, 'r': 1, 'd': 1, '!': 1}:
+    pass
+
+if numeros !=  {'1': 1, '2': 2, '3': 3}:
+    raise ValueError("errooo")
+
+if numeros ==  {'1': 1, '2': 2, '3': 3}:
+    pass
+
+if espaco_branco !=  {}:
+    raise ValueError("errooo")
+
+if espaco_branco ==  {}:
+    pass
+
+if python !=  {'p': 1, 'y': 1, 't': 1, 'h': 1, 'o': 1, 'n': 1, '3': 1, '.': 1, '1': 1, '0': 1, '!': 1}:
+    raise ValueError("errooo")
+
+if python ==  {'p': 1, 'y': 1, 't': 1, 'h': 1, 'o': 1, 'n': 1, '3': 1, '.': 1, '1': 1, '0': 1, '!': 1}:
+    pass
