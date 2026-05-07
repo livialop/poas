@@ -1,7 +1,12 @@
 from sqlmodel import SQLModel, Field, Relationship
 import datetime
 from decimal import Decimal
-from typing import Optional
+from __future__ import annotations
+
+
+def utc() -> datetime.datetime:
+    '''Retorna a data atual'''
+    return datetime.datetime.now(datetime.timezone.utc)
 
 
 # Tabelas de conexão
@@ -37,7 +42,7 @@ class ProdutoCategorias(SQLModel, table=True):
 
 
 
-# Tabelas de usuários e papeis
+# Tabelas 
 
 class Usuarios(SQLModel, table=True):
     __tablename__ = "usuarios"
@@ -46,12 +51,16 @@ class Usuarios(SQLModel, table=True):
     nome: str = Field(max_length=100)
     email: str = Field(unique=True, max_length=120, index=True)
     senha_hash: str = Field(max_length=255)
-    criado_em: datetime.datetime = Field(default=datetime.datetime.now(datetime.timezone.utc))
+    criado_em: datetime.datetime = Field(default_factory=utc())
 
     papeis: list[Papeis] = Relationship(
         back_populates="usuarios",
         link_model=UsuarioPapeis
     )
+    pedidos: list[Pedidos] = Relationship(back_populates="usuario") # o nome do backpopulates tem que ser igual ao nome da variavel que foi declarada na outra classe. aqui é usuario no sing. pq é como eu declarei na tab. de pedidos
+    enderecos: list[Enderecos] = Relationship(back_populates="usuario")
+    avaliacoes: list[Avaliacoes] = Relationship(back_populates="usuario")
+
 
 class Papeis(SQLModel, table=True):
     __tablename__ = "papeis"
@@ -65,16 +74,22 @@ class Papeis(SQLModel, table=True):
     )
 
 
-# Tabelas de produtos e categoria
-
 class Produtos(SQLModel, table=True):
     __tablename__ = "produtos"
     
     id: int | None = Field(default=None, primary_key=True)
     nome: str = Field(max_length=150)
-    descricao: str | None
+    descricao: str | None = Field(default=None)
     preco: Decimal = Field(max_digits=10, decimal_places=2) # mesma coisa que DECIMAL(10,2)
-    criado_em: datetime = Field(default=datetime.datetime.now(datetime.timezone.utc))
+    criado_em: datetime.datetime = Field(default_factory=utc())
+    categorias: list[Categorias] = Relationship(
+        back_populates="produtos",
+        link_model=ProdutoCategorias
+    )
+    itens_pedido: list[ItensPedido] = Relationship(back_populates="produto")
+    avaliacoes: list[Avaliacoes] = Relationship(back_populates="produto")
+    estoque: Estoque | None = Relationship(back_populates="produto")
+
 
 class Categorias(SQLModel, table=True):
     __tablename__ = "categorias"
@@ -82,111 +97,108 @@ class Categorias(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     nome: str = Field(max_length=100)
 
+    produtos: list[Produtos] = Relationship(
+        back_populates="categorias",
+        link_model=ProdutoCategorias
+    )
 
 
+class Pedidos(SQLModel, table=True):
+    __tablename__: str = "pedidos"
 
-# =========================
-# TABELAS
-# =========================
+    id: int | None = Field(default=None, primary_key=True)
+    usuario_id: int | None = Field(
+        default=None,
+        foreign_key="usuarios.id"
+    )
+    total: Decimal = Field(max_digits=10, decimal_places=2)
+    status: str = Field(max_length=50)
+    criado_em: datetime.datetime = Field(default_factory=utc())
 
-'''
-CREATE TABLE usuarios ( =================================== FEITO
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(100),
-    email VARCHAR(150) UNIQUE,
-    senha_hash VARCHAR(255),
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+    usuario: Usuarios | None = Relationship(back_populates="pedidos")
+    itens: list[ItensPedido] = Relationship(back_populates="pedidos")
+    pagamentos: list[Pagamentos] = Relationship(back_populates="pedido")
 
-CREATE TABLE papeis ( =================================== FEITO
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(50) UNIQUE
-);
 
-CREATE TABLE usuario_papeis ( =================================== FEITO
-    usuario_id INT,
-    papel_id INT,
-    PRIMARY KEY (usuario_id, papel_id),
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
-    FOREIGN KEY (papel_id) REFERENCES papeis(id)
-);
+class ItensPedido(SQLModel, table=True):
+    __tablename__: str = "itens_pedido"
 
-CREATE TABLE produtos ( =================================== FEITO
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(150),
-    descricao TEXT,
-    preco DECIMAL(10,2),
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+    id: int | None = Field(default=None, primary_key=True)
+    pedido_id: int | None = Field(
+        default=None,
+        foreign_key="pedidos.id"
+    )
+    produto_id: int | None = Field(
+        default=None,
+        foreign_key="produtos.id"
+    )
+    quantidade: int = Field()
+    preco: Decimal = Field(max_digits=10, decimal_places=2)
+    pedido: Pedidos | None = Relationship(back_populates="itens")
+    produto: Produtos | None = Relationship(back_populates="itens_pedido")
 
-CREATE TABLE categorias ( =================================== FEITO
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(100)
-);
 
-CREATE TABLE produto_categorias ( =================================== FEITO
-    produto_id INT,
-    categoria_id INT,
-    PRIMARY KEY (produto_id, categoria_id),
-    FOREIGN KEY (produto_id) REFERENCES produtos(id),
-    FOREIGN KEY (categoria_id) REFERENCES categorias(id)
-);
+class Pagamentos(SQLModel, table=True):
+    __tablename__: str = "pagamentos"
 
-CREATE TABLE pedidos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT,
-    total DECIMAL(10,2),
-    status VARCHAR(50),
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
-);
+    id: int | None = Field(default=None, primary_key=True)
+    pedido_id: int | None = Field(
+        default=None, 
+        foreign_key="pedidos.id"
+    )
+    valor: Decimal = Field(max_digits=10, decimal_places=2)
+    metodo: str = Field(max_length=50)
+    status: str = Field(max_length=50)
+    pago_em: datetime.datetime = Field(default_factory=utc())
 
-CREATE TABLE itens_pedido (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    pedido_id INT,
-    produto_id INT,
-    quantidade INT,
-    preco DECIMAL(10,2),
-    FOREIGN KEY (pedido_id) REFERENCES pedidos(id),
-    FOREIGN KEY (produto_id) REFERENCES produtos(id)
-);
+    pedido: Pedidos | None = Relationship(back_populates="pagamentos")
 
-CREATE TABLE pagamentos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    pedido_id INT,
-    valor DECIMAL(10,2),
-    metodo VARCHAR(50),
-    status VARCHAR(50),
-    pago_em TIMESTAMP,
-    FOREIGN KEY (pedido_id) REFERENCES pedidos(id)
-);
 
-CREATE TABLE enderecos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT,
-    rua VARCHAR(150),
-    cidade VARCHAR(100),
-    estado VARCHAR(100),
-    cep VARCHAR(20),
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
-);
+class Enderecos(SQLModel, table=True):
+    __tablename__: str = "enderecos"
 
-CREATE TABLE avaliacoes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT,
-    produto_id INT,
-    nota INT,
-    comentario TEXT,
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
-    FOREIGN KEY (produto_id) REFERENCES produtos(id)
-);
+    id: int | None = Field(default=None, primary_key=True)
+    usuario_id: int | None = Field(
+        default=None, 
+        foreign_key="usuarios.id"
+    )
+    rua: str | None = Field(max_length=150)
+    cidade: str | None = Field(max_length=100)
+    estado: str | None = Field(max_length=100)
+    cep: str | None = Field(max_length=20)
 
-CREATE TABLE estoque (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    produto_id INT UNIQUE,
-    quantidade INT,
-    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (produto_id) REFERENCES produtos(id)
-);
-'''
+    usuario: Usuarios | None = Relationship(back_populates="enderecos")
+
+
+class Avaliacoes(SQLModel, table=True):
+    __tablename__: str = "avaliacoes"
+
+    id: int | None = Field(default=None, primary_key=True)
+    usuario_id: int | None = Field(
+        default=None, 
+        foreign_key="usuarios.id"
+    )
+    produto_id: int | None = Field(
+        default=None,
+        foreign_key="produtos.id"
+    )
+    nota: int = Field()
+    comentario: str | None = Field(default=None)
+    criado_em: datetime.datetime = Field(default_factory=utc())
+
+    usuario: Usuarios | None = Relationship(back_populates="avaliacoes")
+    produto: Produtos | None = Relationship(back_populates="avaliacoes")
+
+
+class Estoque(SQLModel, table=True):
+    __tablename__: str = "estoque"
+
+    id: int | None = Field(default=None, primary_key=True)
+    produto_id: int | None = Field(
+        default=None, 
+        foreign_key="produtos.id"
+    )
+    quantidade: int = Field()
+    atualizado_em: datetime.datetime = Field(default_factory=utc())
+
+    produto: Produtos | None = Relationship(back_populates="estoque")
